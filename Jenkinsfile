@@ -1,39 +1,35 @@
 pipeline {
-  agent any
-
-  environment {
-    NODE_VERSION = "14.16.1"
-    APP_PORT = "3000"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', url: 'https://github.com/atharvanikte/assignment2.git'
-      }
-    }
-
-    stage('Install Dependencies') {
-      steps {
-        sh "npm install"
-      }
-    }
-
-    stage('Build') {
-      steps {
-        sh "npm run build"
-      }
-    }
-
-    stage('Deploy') {
-      steps {
-        sh "npm start &"
-        sh "sleep 10" // Wait for the server to start
-        script {
-          def appUrl = "http://localhost:8080"
-          sh "curl --fail ${appUrl}"
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/atharvanikte/assignment2.git']]])
+            }
         }
-      }
+        
+        stage('Build and Deploy') {
+            environment {
+                NODE_HOME = tool 'NodeJS'
+                PHP_HOME = tool 'PHP'
+                FLASK_APP = 'app.py'
+            }
+            steps {
+                script {
+                    if (fileExists('package.json')) {
+                        sh 'npm install'
+                        sh 'npm run build'
+                        sh 'npm run start'
+                    } else if (fileExists('index.php')) {
+                        sh 'php index.php'
+                    } else if (fileExists('app.py')) {
+                        sh 'pip install -r requirements.txt'
+                        sh 'flask run'
+                    } else {
+                        error 'No supported files found!'
+                    }
+                }
+            }
+        }
     }
-  }
 }
