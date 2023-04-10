@@ -30,7 +30,8 @@ pipeline {
         sh "npm start &"
         sh "sleep 10" // Wait for the server to start
         script {
-          def appUrl = "http://localhost:${8080}"    
+          def appUrl = "http://localhost:${8080}"
+        }
       }
     }
   }
